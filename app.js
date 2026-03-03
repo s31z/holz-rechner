@@ -3,18 +3,21 @@
 // Radius (m) = Umfang(cm) / 100 / 2 / PI
 // Volumen (m^3) = PI * Radius^2 * Länge(cm)/100
 //
-// Cookie/Local persistence:
-// - Values are saved automatically to localStorage (preferred over cookies for size/reliability).
-// - A "Gespeicherte Werte löschen" button clears the saved state.
+// Persistence:
+// - Saved rows are stored in localStorage.
+// UX changes (per request):
+// - First visit: no pre-filled entries.
+// - Each row has a "Speichern" button; calculations apply only after saving.
+// - A new empty row appears automatically after saving a row with values.
+// - No "add row" button is needed.
 
 const PI = Math.PI;
 const fmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 6 });
 
-const STORAGE_KEY = "holzVolumenRechner:v1";
+const STORAGE_KEY = "holzVolumenRechner:v2";
 
 const tableBody = document.querySelector("#calcTable tbody");
 const sumCell = document.querySelector("#sumCell");
-const addRowBtn = document.querySelector("#addRowBtn");
 const clearBtn = document.querySelector("#clearBtn");
 const clearSavedBtn = document.querySelector("#clearSavedBtn");
 
@@ -36,28 +39,24 @@ function calcRow(lengthCm, circumferenceCm) {
   return { radiusM, volumeM3 };
 }
 
-function getRowsFromDOM() {
+// -------- persistence (saved rows only) --------
+function getSavedRowsFromDOM() {
   const rows = [];
   for (const tr of tableBody.querySelectorAll("tr")) {
-    const lenInput = tr.querySelector('input[data-col="laenge"]');
-    const umfInput = tr.querySelector('input[data-col="umfang"]');
-    rows.push({
-      laenge_cm: lenInput?.value ?? "",
-      umfang_cm: umfInput?.value ?? ""
-    });
+    const savedLen = tr.dataset.savedLen ?? "";
+    const savedUmf = tr.dataset.savedUmf ?? "";
+    if (savedLen !== "" || savedUmf !== "") {
+      rows.push({ laenge_cm: savedLen, umfang_cm: savedUmf });
+    }
   }
   return rows;
 }
 
 function saveState() {
   try {
-    const payload = {
-      rows: getRowsFromDOM(),
-      savedAt: new Date().toISOString()
-    };
+    const payload = { rows: getSavedRowsFromDOM(), savedAt: new Date().toISOString() };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (e) {
-    // If storage is blocked (private mode / settings), fail silently.
     console.warn("Saving disabled:", e);
   }
 }
@@ -69,85 +68,144 @@ function loadState() {
     const parsed = JSON.parse(raw);
     if (!parsed || !Array.isArray(parsed.rows)) return null;
     return parsed.rows;
-  } catch (e) {
+  } catch {
     return null;
   }
 }
 
 function clearSavedState() {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch (e) {
-    // ignore
-  }
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
 }
 
-function render({ skipSave = false } = {}) {
+// -------- rendering --------
+function renderSum() {
   let sum = 0;
-
   for (const tr of tableBody.querySelectorAll("tr")) {
-    const lenInput = tr.querySelector('input[data-col="laenge"]');
-    const umfInput = tr.querySelector('input[data-col="umfang"]');
-    const rOut = tr.querySelector('[data-out="radius"]');
-    const vOut = tr.querySelector('[data-out="volume"]');
-
-    const { radiusM, volumeM3 } = calcRow(lenInput.value, umfInput.value);
-
-    rOut.textContent = Number.isFinite(radiusM) ? fmt.format(radiusM) : "—";
-    vOut.textContent = Number.isFinite(volumeM3) ? fmt.format(volumeM3) : "—";
-
+    const savedLen = tr.dataset.savedLen ?? "";
+    const savedUmf = tr.dataset.savedUmf ?? "";
+    const { volumeM3 } = calcRow(savedLen, savedUmf);
     if (Number.isFinite(volumeM3)) sum += volumeM3;
   }
-
   sumCell.textContent = fmt.format(sum);
+}
 
-  if (!skipSave) saveState();
+function updateRowOutputs(tr) {
+  const rOut = tr.querySelector('[data-out="radius"]');
+  const vOut = tr.querySelector('[data-out="volume"]');
+
+  const savedLen = tr.dataset.savedLen ?? "";
+  const savedUmf = tr.dataset.savedUmf ?? "";
+
+  if (savedLen === "" && savedUmf === "") {
+    rOut.textContent = "—";
+    vOut.textContent = "—";
+    return;
+  }
+
+  const { radiusM, volumeM3 } = calcRow(savedLen, savedUmf);
+  rOut.textContent = Number.isFinite(radiusM) ? fmt.format(radiusM) : "—";
+  vOut.textContent = Number.isFinite(volumeM3) ? fmt.format(volumeM3) : "—";
+}
+
+function ensureTrailingEmptyRow() {
+  const trs = Array.from(tableBody.querySelectorAll("tr"));
+  if (trs.length === 0) {
+    addRow();
+    return;
+  }
+  const last = trs[trs.length - 1];
+  const lastSavedLen = last.dataset.savedLen ?? "";
+  const lastSavedUmf = last.dataset.savedUmf ?? "";
+
+  // If the last row has saved values, append a new empty row.
+  if (lastSavedLen !== "" || lastSavedUmf !== "") {
+    addRow();
+  }
 }
 
 function addRow(values = { laenge_cm: "", umfang_cm: "" }) {
   const tr = document.createElement("tr");
 
+  // Saved values drive calculations; inputs are editable drafts.
+  tr.dataset.savedLen = values.laenge_cm ?? "";
+  tr.dataset.savedUmf = values.umfang_cm ?? "";
+
   tr.innerHTML = `
-    <td><input data-col="laenge" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 500" value="${values.laenge_cm ?? ""}"></td>
-    <td><input data-col="umfang" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 88" value="${values.umfang_cm ?? ""}"></td>
+    <td>
+      <div class="cellFlex">
+        <input data-col="laenge" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 500" value="${values.laenge_cm ?? ""}">
+        <button class="saveBtn" type="button" title="Werte speichern">Speichern</button>
+      </div>
+    </td>
+    <td>
+      <input data-col="umfang" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 88" value="${values.umfang_cm ?? ""}">
+    </td>
     <td class="out" data-out="radius">—</td>
     <td class="out" data-out="volume">—</td>
     <td><button class="iconBtn" type="button" title="Zeile löschen" aria-label="Zeile löschen"><span>×</span></button></td>
   `;
 
-  const inputs = tr.querySelectorAll("input");
-  inputs.forEach(inp => inp.addEventListener("input", () => render()));
+  const lenInput = tr.querySelector('input[data-col="laenge"]');
+  const umfInput = tr.querySelector('input[data-col="umfang"]');
+  const saveBtn = tr.querySelector(".saveBtn");
 
-  tr.querySelector("button").addEventListener("click", () => {
+  // Mark row as "dirty" when typing (purely visual; outputs won't change until save).
+  function markDirty() {
+    tr.classList.add("dirty");
+  }
+  lenInput.addEventListener("input", markDirty);
+  umfInput.addEventListener("input", markDirty);
+
+  saveBtn.addEventListener("click", () => {
+    const lenVal = (lenInput.value ?? "").trim();
+    const umfVal = (umfInput.value ?? "").trim();
+
+    // If both empty: treat as "not saved"
+    tr.dataset.savedLen = lenVal;
+    tr.dataset.savedUmf = umfVal;
+
+    tr.classList.remove("dirty");
+
+    updateRowOutputs(tr);
+    ensureTrailingEmptyRow();
+    renderSum();
+    saveState();
+  });
+
+  tr.querySelector(".iconBtn").addEventListener("click", () => {
     tr.remove();
-    // keep at least one row
+    // Ensure at least one empty row exists
     if (tableBody.querySelectorAll("tr").length === 0) addRow();
-    render();
+    ensureTrailingEmptyRow();
+    // Recompute after delete
+    for (const row of tableBody.querySelectorAll("tr")) updateRowOutputs(row);
+    renderSum();
+    saveState();
   });
 
   tableBody.appendChild(tr);
+  updateRowOutputs(tr);
 }
 
-function setRows(rows) {
+function setRows(savedRows) {
   tableBody.innerHTML = "";
-  if (Array.isArray(rows) && rows.length) {
-    rows.forEach(r => addRow(r));
+  if (Array.isArray(savedRows) && savedRows.length) {
+    savedRows.forEach(r => addRow(r));
   } else {
-    addRow();
+    addRow(); // first visit: empty
   }
-  render({ skipSave: true }); // render once without saving, then save explicitly
-  saveState();
+  ensureTrailingEmptyRow();
+  renderSum();
 }
 
-addRowBtn.addEventListener("click", () => {
-  addRow();
-  render();
-});
-
+// -------- toolbar buttons --------
 clearBtn.addEventListener("click", () => {
+  // Clear current entries and also clear saved state (keeps storage consistent)
   tableBody.innerHTML = "";
-  addRow(); // keep one empty row
-  render();
+  addRow();
+  ensureTrailingEmptyRow();
+  renderSum();
+  saveState(); // saves as empty
 });
 
 if (clearSavedBtn) {
@@ -155,16 +213,17 @@ if (clearSavedBtn) {
     clearSavedState();
     tableBody.innerHTML = "";
     addRow();
-    render({ skipSave: true });
-    // don't auto-save immediately; leave it empty until user enters values
+    ensureTrailingEmptyRow();
+    renderSum();
+    // Do not auto-save: leave storage empty until the user saves a row
   });
 }
 
-// bootstrap: prefer saved state, fallback to embedded Excel values
+// -------- bootstrap --------
 const saved = loadState();
 if (saved) {
   setRows(saved);
 } else {
-  const initial = Array.isArray(window.__INITIAL_ROWS__) ? window.__INITIAL_ROWS__ : [];
-  setRows(initial);
+  // Explicitly ignore any embedded initial rows (first visit should be empty)
+  setRows([]);
 }
