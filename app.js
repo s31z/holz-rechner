@@ -134,11 +134,11 @@ function addRow(values = { laenge_cm: "", umfang_cm: "" }) {
     <td>
       <div class="cellFlex">
         <input data-col="laenge" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 500" value="${values.laenge_cm ?? ""}">
-        <button class="saveBtn" type="button" title="Werte speichern">Speichern</button>
       </div>
     </td>
     <td>
       <input data-col="umfang" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 88" value="${values.umfang_cm ?? ""}">
+      <button class="saveBtn" type="button" title="Werte speichern">Speichern</button>
     </td>
     <td class="out" data-out="radius">—</td>
     <td class="out" data-out="volume">—</td>
