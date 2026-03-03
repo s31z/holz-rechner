@@ -79,7 +79,7 @@ table{
 
 thead th{
   text-align:left;
-  padding: 12px 10px;
+  padding: 8px 6px;
   font-size: 13px;
   color: var(--muted);
   background: rgba(0,0,0,.15);
@@ -87,7 +87,7 @@ thead th{
 }
 
 tbody td{
-  padding: 8px 10px;
+  padding: 8px 6px;
   border-bottom:1px solid rgba(35,48,68,.7);
   vertical-align: middle;
 }
@@ -95,7 +95,7 @@ tbody td{
 tbody tr:hover td{ background: rgba(255,255,255,.03); }
 
 tfoot td{
-  padding: 12px 10px;
+  padding: 10px 6px;
   border-top:1px solid var(--line);
   background: rgba(0,0,0,.18);
   font-weight: 700;
@@ -103,8 +103,8 @@ tfoot td{
 
 input[type="number"]{
   width: 100%;
-  max-width: 160px;
-  padding: 10px 10px;
+  max-width: 110px;      /* compact */
+  padding: 8px 8px;      /* compact */
   border-radius: 10px;
   border:1px solid rgba(35,48,68,.9);
   background: rgba(0,0,0,.25);
@@ -127,12 +127,13 @@ input[type="number"]:focus{ border-color: rgba(90,169,255,.8); }
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   border: 1px solid rgba(35,48,68,.9);
   background: rgba(0,0,0,.18);
   cursor:pointer;
+  padding: 0; /* important: keep column tight */
 }
 .iconBtn:hover{ border-color: rgba(255,90,122,.7); }
 .iconBtn span{ color: var(--danger); font-weight: 800; }
@@ -151,38 +152,19 @@ input[type="number"]:focus{ border-color: rgba(90,169,255,.8); }
   font-size: 12px;
 }
 
+/* Save button now shows ✓, so we make it square-ish and compact */
 .saveBtn{
-  padding: 10px 12px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
   border:1px solid var(--line);
   background: rgba(90,169,255,.12);
   color: var(--text);
-  font-weight: 700;
-  white-space: nowrap;
+  font-weight: 800;
+  line-height: 1;
 }
 .saveBtn:hover{ border-color: rgba(90,169,255,.85); }
-
-/* ---- Compact layout overrides (desktop + mobile) ---- */
-thead th,
-tbody td,
-tfoot td{
-  padding: 8px 6px;
-}
-
-input[type="number"]{
-  max-width: 110px;
-  padding: 8px 8px;
-}
-
-.saveBtn{
-  padding: 8px 10px;
-}
-
-.iconBtn{
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-}
 
 /* Mobile-specific: even tighter */
 @media (max-width: 480px){
@@ -199,8 +181,9 @@ input[type="number"]{
     padding: 7px 7px;
   }
 
-  .saveBtn{
-    padding: 7px 8px;
-    font-size: 12px;
+  .saveBtn,
+  .iconBtn{
+    width: 32px;
+    height: 32px;
   }
 }
