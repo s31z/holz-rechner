@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Holz-Volumen Rechner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <header class="header">
+      <h1>Holz-Volumen Rechner</h1>
+      <p class="sub">Berechnet Radius und Zylindervolumen aus <b>Länge</b> und <b>Umfang</b> (wie in deiner Excel-Datei).</p>
+    </header>
+
+    <section class="card">
+      <div class="toolbar">
+        <button id="addRowBtn" type="button">+ Zeile hinzufügen</button>
+        <button id="clearBtn" type="button" class="secondary">Leeren</button>
+        <button id="clearSavedBtn" type="button" class="secondary">Gespeicherte Werte löschen</button>
+      </div>
+
+      <div class="tableWrap">
+        <table id="calcTable" aria-label="Holz Volumen Tabelle">
+          <thead>
+            <tr>
+              <th>Länge (cm)</th>
+              <th>Umfang (cm)</th>
+              <th>Radius (m)</th>
+              <th>Volumen (m³)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="sumLabel">Summe</td>
+              <td id="sumCell" class="sumValue">0</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <details class="details">
+        <summary>Formeln</summary>
+        <ul>
+          <li><code>Radius (m) = Umfang(cm) / 100 / 2 / π</code></li>
+          <li><code>Volumen (m³) = π × Radius² × Länge(cm)/100</code></li>
+        </ul>
+      </details>
+    </section>
+
+    <footer class="footer">
+      <span>Offline-fähig, reine statische Dateien (HTML/CSS/JS).</span>
+    </footer>
+  </main>
+
+  <script>
+    window.__INITIAL_ROWS__ = [{"laenge_cm": 400, "umfang_cm": 110}, {"laenge_cm": 500, "umfang_cm": 88}, {"laenge_cm": 500, "umfang_cm": 70}, {"laenge_cm": 500, "umfang_cm": 90}, {"laenge_cm": 500, "umfang_cm": 98}, {"laenge_cm": 500, "umfang_cm": 65}, {"laenge_cm": 500, "umfang_cm": 102}, {"laenge_cm": 500, "umfang_cm": 65}, {"laenge_cm": 50, "umfang_cm": 10}, {"laenge_cm": "", "umfang_cm": ""}, {"laenge_cm": "", "umfang_cm": ""}, {"laenge_cm": "", "umfang_cm": ""}, {"laenge_cm": "", "umfang_cm": ""}];
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
