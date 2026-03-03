@@ -12,7 +12,9 @@
 // Persistenz: localStorage (keine Cookies notwendig)
 
 const PI = Math.PI;
-const fmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 6 });
+const fmt = new Intl.NumberFormat("de-DE", { 
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2 });
 const KEY = "holzVolumenRechner:v3";
 
 const body = document.querySelector("#calcTable tbody");
