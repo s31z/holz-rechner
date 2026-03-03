@@ -84,7 +84,7 @@ function addRow(values = { laenge_cm: "", umfang_cm: "" }) {
   tr.innerHTML = `
     <td><input data-in="L" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 500" value="${values.laenge_cm ?? ""}"></td>
     <td><input data-in="U" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 88" value="${values.umfang_cm ?? ""}"></td>
-    <td><button class="saveBtn" type="button">Speichern</button></td>
+    <td><button class="saveBtn" type="button">✓</button></td>
     <td class="out" data-out="radius">—</td>
     <td class="out" data-out="volume">—</td>
     <td><button class="iconBtn" type="button" title="Zeile löschen" aria-label="Zeile löschen"><span>×</span></button></td>
