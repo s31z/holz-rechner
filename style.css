@@ -70,6 +70,16 @@ button.secondary{ color: var(--muted); }
   -webkit-overflow-scrolling: touch; /* iOS momentum scroll */
 }
 
+.sumBar{
+  display:flex;
+  align-items:baseline;
+  justify-content:center;
+  gap: 10px;
+  padding: 14px 12px;
+  border-top: 1px solid var(--line);
+  background: rgba(0,0,0,.18);
+}
+
 table{
   width:100%;
   border-collapse: collapse;
@@ -170,6 +180,11 @@ input[type="number"]:focus{ border-color: rgba(90,169,255,.8); }
 @media (max-width: 480px){
   .container{
     padding: 16px 10px 24px;
+  }
+
+  .sumBar{
+    padding: 12px 10px;
+    gap: 8px;
   }
 
   thead th{
