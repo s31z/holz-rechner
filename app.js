@@ -1,229 +1,131 @@
-// Holz-Volumen Rechner – vanilla JS
-// Mirrors the Excel logic:
+// Holz-Volumen Rechner (statische Seite)
+// Formeln (wie Excel):
 // Radius (m) = Umfang(cm) / 100 / 2 / PI
-// Volumen (m^3) = PI * Radius^2 * Länge(cm)/100
+// Volumen (m³) = PI * Radius² * Länge(cm)/100
 //
-// Persistence:
-// - Saved rows are stored in localStorage.
-// UX changes (per request):
-// - First visit: no pre-filled entries.
-// - Each row has a "Speichern" button; calculations apply only after saving.
-// - A new empty row appears automatically after saving a row with values.
-// - No "add row" button is needed.
+// UX:
+// - Erste Nutzung: leer (keine vorausgefüllten Werte).
+// - Pro Zeile: 2 Eingaben, dann "Speichern" (erst dann wird gerechnet).
+// - Nach dem Speichern wird automatisch eine neue leere Zeile angehängt.
+// - Ein Button "Alle Werte löschen" löscht Tabelle + gespeicherte Daten.
+//
+// Persistenz: localStorage (keine Cookies notwendig)
 
 const PI = Math.PI;
 const fmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 6 });
+const KEY = "holzVolumenRechner:v3";
 
-const STORAGE_KEY = "holzVolumenRechner:v2";
-
-const tableBody = document.querySelector("#calcTable tbody");
+const body = document.querySelector("#calcTable tbody");
 const sumCell = document.querySelector("#sumCell");
-const clearBtn = document.querySelector("#clearBtn");
-const clearSavedBtn = document.querySelector("#clearSavedBtn");
+const clearAllBtn = document.querySelector("#clearAllBtn");
 
-function toNumber(v) {
-  if (v === "" || v === null || v === undefined) return NaN;
+const num = (v) => {
   const n = Number(v);
   return Number.isFinite(n) ? n : NaN;
-}
+};
 
-function calcRow(lengthCm, circumferenceCm) {
-  const L = toNumber(lengthCm);
-  const U = toNumber(circumferenceCm);
+const calc = (Lcm, Ucm) => {
+  const L = num(Lcm);
+  const U = num(Ucm);
+  if (!Number.isFinite(L) || !Number.isFinite(U) || L < 0 || U < 0) return { r: NaN, v: NaN };
+  const r = (U / 100) / 2 / PI;
+  const v = PI * r * r * (L / 100);
+  return { r, v };
+};
 
-  if (!Number.isFinite(L) || !Number.isFinite(U) || L < 0 || U < 0) {
-    return { radiusM: NaN, volumeM3: NaN };
-  }
-  const radiusM = (U / 100) / 2 / PI;
-  const volumeM3 = PI * (radiusM ** 2) * (L / 100);
-  return { radiusM, volumeM3 };
-}
-
-// -------- persistence (saved rows only) --------
-function getSavedRowsFromDOM() {
-  const rows = [];
-  for (const tr of tableBody.querySelectorAll("tr")) {
-    const savedLen = tr.dataset.savedLen ?? "";
-    const savedUmf = tr.dataset.savedUmf ?? "";
-    if (savedLen !== "" || savedUmf !== "") {
-      rows.push({ laenge_cm: savedLen, umfang_cm: savedUmf });
-    }
-  }
-  return rows;
-}
-
-function saveState() {
+const load = () => {
   try {
-    const payload = { rows: getSavedRowsFromDOM(), savedAt: new Date().toISOString() };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch (e) {
-    console.warn("Saving disabled:", e);
-  }
-}
+    const raw = localStorage.getItem(KEY);
+    const data = raw ? JSON.parse(raw) : null;
+    return Array.isArray(data?.rows) ? data.rows : [];
+  } catch { return []; }
+};
 
-function loadState() {
+const save = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || !Array.isArray(parsed.rows)) return null;
-    return parsed.rows;
-  } catch {
-    return null;
+    const rows = [...body.querySelectorAll("tr")]
+      .map(tr => ({ laenge_cm: tr.dataset.L || "", umfang_cm: tr.dataset.U || "" }))
+      .filter(r => r.laenge_cm !== "" || r.umfang_cm !== "");
+    localStorage.setItem(KEY, JSON.stringify({ rows }));
+  } catch {}
+};
+
+const setSum = () => {
+  let s = 0;
+  for (const tr of body.querySelectorAll("tr")) {
+    const { v } = calc(tr.dataset.L, tr.dataset.U);
+    if (Number.isFinite(v)) s += v;
   }
-}
+  sumCell.textContent = fmt.format(s);
+};
 
-function clearSavedState() {
-  try { localStorage.removeItem(STORAGE_KEY); } catch {}
-}
-
-// -------- rendering --------
-function renderSum() {
-  let sum = 0;
-  for (const tr of tableBody.querySelectorAll("tr")) {
-    const savedLen = tr.dataset.savedLen ?? "";
-    const savedUmf = tr.dataset.savedUmf ?? "";
-    const { volumeM3 } = calcRow(savedLen, savedUmf);
-    if (Number.isFinite(volumeM3)) sum += volumeM3;
-  }
-  sumCell.textContent = fmt.format(sum);
-}
-
-function updateRowOutputs(tr) {
+const setOutputs = (tr) => {
   const rOut = tr.querySelector('[data-out="radius"]');
   const vOut = tr.querySelector('[data-out="volume"]');
+  const has = (tr.dataset.L || tr.dataset.U);
+  if (!has) { rOut.textContent = "—"; vOut.textContent = "—"; return; }
+  const { r, v } = calc(tr.dataset.L, tr.dataset.U);
+  rOut.textContent = Number.isFinite(r) ? fmt.format(r) : "—";
+  vOut.textContent = Number.isFinite(v) ? fmt.format(v) : "—";
+};
 
-  const savedLen = tr.dataset.savedLen ?? "";
-  const savedUmf = tr.dataset.savedUmf ?? "";
-
-  if (savedLen === "" && savedUmf === "") {
-    rOut.textContent = "—";
-    vOut.textContent = "—";
-    return;
-  }
-
-  const { radiusM, volumeM3 } = calcRow(savedLen, savedUmf);
-  rOut.textContent = Number.isFinite(radiusM) ? fmt.format(radiusM) : "—";
-  vOut.textContent = Number.isFinite(volumeM3) ? fmt.format(volumeM3) : "—";
-}
-
-function ensureTrailingEmptyRow() {
-  const trs = Array.from(tableBody.querySelectorAll("tr"));
-  if (trs.length === 0) {
-    addRow();
-    return;
-  }
+const ensureEmptyLastRow = () => {
+  const trs = body.querySelectorAll("tr");
+  if (!trs.length) { addRow(); return; }
   const last = trs[trs.length - 1];
-  const lastSavedLen = last.dataset.savedLen ?? "";
-  const lastSavedUmf = last.dataset.savedUmf ?? "";
-
-  // If the last row has saved values, append a new empty row.
-  if (lastSavedLen !== "" || lastSavedUmf !== "") {
-    addRow();
-  }
-}
+  if ((last.dataset.L || "") !== "" || (last.dataset.U || "") !== "") addRow();
+};
 
 function addRow(values = { laenge_cm: "", umfang_cm: "" }) {
   const tr = document.createElement("tr");
-
-  // Saved values drive calculations; inputs are editable drafts.
-  tr.dataset.savedLen = values.laenge_cm ?? "";
-  tr.dataset.savedUmf = values.umfang_cm ?? "";
+  tr.dataset.L = values.laenge_cm ?? "";
+  tr.dataset.U = values.umfang_cm ?? "";
 
   tr.innerHTML = `
-    <td>
-      <div class="cellFlex">
-        <input data-col="laenge" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 500" value="${values.laenge_cm ?? ""}">
-      </div>
-    </td>
-    <td>
-      <input data-col="umfang" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 88" value="${values.umfang_cm ?? ""}">
-      <button class="saveBtn" type="button" title="Werte speichern">Speichern</button>
-    </td>
+    <td><input data-in="L" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 500" value="${values.laenge_cm ?? ""}"></td>
+    <td><input data-in="U" type="number" inputmode="decimal" step="any" min="0" placeholder="z.B. 88" value="${values.umfang_cm ?? ""}"></td>
+    <td><button class="saveBtn" type="button">Speichern</button></td>
     <td class="out" data-out="radius">—</td>
     <td class="out" data-out="volume">—</td>
     <td><button class="iconBtn" type="button" title="Zeile löschen" aria-label="Zeile löschen"><span>×</span></button></td>
   `;
 
-  const lenInput = tr.querySelector('input[data-col="laenge"]');
-  const umfInput = tr.querySelector('input[data-col="umfang"]');
-  const saveBtn = tr.querySelector(".saveBtn");
+  const inpL = tr.querySelector('input[data-in="L"]');
+  const inpU = tr.querySelector('input[data-in="U"]');
+  const btnSave = tr.querySelector(".saveBtn");
 
-  // Mark row as "dirty" when typing (purely visual; outputs won't change until save).
-  function markDirty() {
-    tr.classList.add("dirty");
-  }
-  lenInput.addEventListener("input", markDirty);
-  umfInput.addEventListener("input", markDirty);
-
-  saveBtn.addEventListener("click", () => {
-    const lenVal = (lenInput.value ?? "").trim();
-    const umfVal = (umfInput.value ?? "").trim();
-
-    // If both empty: treat as "not saved"
-    tr.dataset.savedLen = lenVal;
-    tr.dataset.savedUmf = umfVal;
-
-    tr.classList.remove("dirty");
-
-    updateRowOutputs(tr);
-    ensureTrailingEmptyRow();
-    renderSum();
-    saveState();
+  btnSave.addEventListener("click", () => {
+    tr.dataset.L = (inpL.value || "").trim();
+    tr.dataset.U = (inpU.value || "").trim();
+    setOutputs(tr);
+    ensureEmptyLastRow();
+    setSum();
+    save();
   });
 
   tr.querySelector(".iconBtn").addEventListener("click", () => {
     tr.remove();
-    // Ensure at least one empty row exists
-    if (tableBody.querySelectorAll("tr").length === 0) addRow();
-    ensureTrailingEmptyRow();
-    // Recompute after delete
-    for (const row of tableBody.querySelectorAll("tr")) updateRowOutputs(row);
-    renderSum();
-    saveState();
+    if (!body.querySelector("tr")) addRow();
+    ensureEmptyLastRow();
+    [...body.querySelectorAll("tr")].forEach(setOutputs);
+    setSum();
+    save();
   });
 
-  tableBody.appendChild(tr);
-  updateRowOutputs(tr);
+  body.appendChild(tr);
+  setOutputs(tr);
 }
 
-function setRows(savedRows) {
-  tableBody.innerHTML = "";
-  if (Array.isArray(savedRows) && savedRows.length) {
-    savedRows.forEach(r => addRow(r));
-  } else {
-    addRow(); // first visit: empty
-  }
-  ensureTrailingEmptyRow();
-  renderSum();
-}
-
-// -------- toolbar buttons --------
-clearBtn.addEventListener("click", () => {
-  // Clear current entries and also clear saved state (keeps storage consistent)
-  tableBody.innerHTML = "";
+clearAllBtn.addEventListener("click", () => {
+  try { localStorage.removeItem(KEY); } catch {}
+  body.innerHTML = "";
   addRow();
-  ensureTrailingEmptyRow();
-  renderSum();
-  saveState(); // saves as empty
+  setSum();
 });
 
-if (clearSavedBtn) {
-  clearSavedBtn.addEventListener("click", () => {
-    clearSavedState();
-    tableBody.innerHTML = "";
-    addRow();
-    ensureTrailingEmptyRow();
-    renderSum();
-    // Do not auto-save: leave storage empty until the user saves a row
-  });
-}
-
-// -------- bootstrap --------
-const saved = loadState();
-if (saved) {
-  setRows(saved);
-} else {
-  // Explicitly ignore any embedded initial rows (first visit should be empty)
-  setRows([]);
-}
+// bootstrap
+const rows = load();
+if (rows.length) rows.forEach(addRow);
+else addRow();
+ensureEmptyLastRow();
+setSum();

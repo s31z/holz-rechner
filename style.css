@@ -147,13 +147,6 @@ input[type="number"]:focus{ border-color: rgba(90,169,255,.8); }
   font-size: 12px;
 }
 
-
-/* Row editing UX */
-.cellFlex{
-  display:flex;
-  gap:8px;
-  align-items:center;
-}
 .saveBtn{
   padding: 10px 12px;
   border-radius: 12px;
@@ -163,9 +156,4 @@ input[type="number"]:focus{ border-color: rgba(90,169,255,.8); }
   font-weight: 700;
   white-space: nowrap;
 }
-.saveBtn:hover{
-  border-color: rgba(90,169,255,.85);
-}
-tr.dirty td{
-  background: rgba(255,255,255,.02);
-}
+.saveBtn:hover{ border-color: rgba(90,169,255,.85); }

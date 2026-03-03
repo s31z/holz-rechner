@@ -10,12 +10,12 @@
   <main class="container">
     <header class="header">
       <h1>Holz-Volumen Rechner</h1>
-      <p class="sub">Berechnet Radius und Zylindervolumen aus <b>Länge</b> und <b>Umfang</b>.</p>
+      <p class="sub">Berechnet Radius und Zylindervolumen aus <b>Länge</b> und <b>Umfang</b> (wie in deiner Excel-Datei).</p>
     </header>
 
     <section class="card">
       <div class="toolbar">
-        <button id="clearSavedBtn" type="button" class="secondary">Alle Werte löschen</button>
+        <button id="clearAllBtn" type="button" class="secondary">Alle Werte löschen</button>
       </div>
 
       <div class="tableWrap">
@@ -24,6 +24,7 @@
             <tr>
               <th>Länge (cm)</th>
               <th>Umfang (cm)</th>
+              <th>Speichern</th>
               <th>Radius (m)</th>
               <th>Volumen (m³)</th>
               <th></th>
@@ -32,7 +33,7 @@
           <tbody></tbody>
           <tfoot>
             <tr>
-              <td colspan="3" class="sumLabel">Summe</td>
+              <td colspan="4" class="sumLabel">Summe</td>
               <td id="sumCell" class="sumValue">0</td>
               <td></td>
             </tr>

@@ -23,3 +23,8 @@ Das ist ein reiner Frontend-Rechner (keine Datenbank). Wenn du Speichern/Export 
 
 ## Persistenz
 Die Eingaben werden automatisch im Browser gespeichert (localStorage). Über den Button **„Gespeicherte Werte löschen“** kannst du die gespeicherten Werte entfernen.
+
+## Bedienung
+- Werte in **Länge** und **Umfang** eingeben, dann **„Speichern“** klicken (erst dann wird gerechnet).
+- Nach dem Speichern erscheint automatisch eine neue leere Zeile.
+- **Alle Werte löschen** löscht Tabelle und Browser-Speicher.
