@@ -67,12 +67,14 @@ button.secondary{ color: var(--muted); }
   overflow:auto;
   border-radius: 14px;
   border: 1px solid var(--line);
+  -webkit-overflow-scrolling: touch; /* iOS momentum scroll */
 }
 
 table{
   width:100%;
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 0;        /* allow shrinking on mobile */
+  table-layout: fixed; /* enforce column widths */
 }
 
 thead th{
@@ -114,6 +116,8 @@ input[type="number"]:focus{ border-color: rgba(90,169,255,.8); }
 .out{
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sumLabel{ color: var(--muted); text-align:right; }
@@ -157,3 +161,46 @@ input[type="number"]:focus{ border-color: rgba(90,169,255,.8); }
   white-space: nowrap;
 }
 .saveBtn:hover{ border-color: rgba(90,169,255,.85); }
+
+/* ---- Compact layout overrides (desktop + mobile) ---- */
+thead th,
+tbody td,
+tfoot td{
+  padding: 8px 6px;
+}
+
+input[type="number"]{
+  max-width: 110px;
+  padding: 8px 8px;
+}
+
+.saveBtn{
+  padding: 8px 10px;
+}
+
+.iconBtn{
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+}
+
+/* Mobile-specific: even tighter */
+@media (max-width: 480px){
+  .container{
+    padding: 16px 10px 24px;
+  }
+
+  thead th{
+    font-size: 12px;
+  }
+
+  input[type="number"]{
+    max-width: 92px;
+    padding: 7px 7px;
+  }
+
+  .saveBtn{
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+}
